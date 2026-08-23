@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>ATOMICA Logistics</title>
+  <style>
+    :root {
+      --tg-theme-bg-color: #1a1a2e;
+      --tg-theme-text-color: #ffffff;
+      --tg-theme-hint-color: #aaaaaa;
+      --tg-theme-button-color: #ff7519;
+      --tg-theme-button-text-color: #ffffff;
+    }
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--tg-theme-bg-color);
+      color: var(--tg-theme-text-color);
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tab-btn {
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 117, 25, 0.25);
+      background: rgba(255,255,255,0.05);
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--tg-theme-text-color);
+    }
+    .tab-btn.active {
+      background: var(--tg-theme-button-color);
+      color: var(--tg-theme-button-text-color);
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .form-group { margin-bottom: 16px; }
+    label { font-size: 14px; display: block; margin-bottom: 4px; color: var(--tg-theme-hint-color); }
+    input, select, textarea {
+      width: 100%; padding: 12px; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+      color: var(--tg-theme-text-color);
+      font-size: 16px; box-sizing: border-box;
+    }
+    button {
+      width: 100%; padding: 16px; border-radius: 12px;
+      background: var(--tg-theme-button-color);
+      color: var(--tg-theme-button-text-color);
+      border: none; font-size: 16px; font-weight: 600; cursor: pointer;
+    }
+</style>
+</head>
+<body>
+  <h1>🚚 ATOMICA Logistics</h1>
+  
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="shipping">Фрахт</button>
+    <button class="tab-btn" data-tab="tracking">Трекинг</button>
+    <button class="tab-btn" data-tab="currency">Валюта</button>
+    <button class="tab-btn" data-tab="suppliers">Поставщики</button>
+  </div>
+
+  <!-- ФРАХТ -->
+  <div id="shipping-tab" class="tab-content active">
+    <div class="form-group">
+      <label>Откуда (город, страна)</label>
+      <input id="s-origin" type="text" placeholder="Шанхай, Китай">
+    </div>
+    <div class="form-group">
+      <label>Куда (город, страна)</label>
+      <input id="s-destination" type="text" placeholder="Москва, Россия">
+    </div>
+    <div class="row">
+      <div class="form-group">
+        <label>Вес (кг)</label>
+        <input id="s-weight" type="number" placeholder="15" min="0.1" step="0.1">
+      </div>
+      <div class="form-group">
+        <label>Стоимость (¥)</label>
+        <input id="s-value" type="number" placeholder="299" min="0" step="1">
+      </div>
+    </div>
+    <button id="calc-shipping">Рассчитать фрахт</button>
+  </div>
+
+  <!-- ТРЕКИНГ -->
+  <div id="tracking-tab" class="tab-content">
+    <div class="form-group">
+      <label>Номер отслеживания</label>
+      <input id="t-number" type="text" placeholder="ABC123456789">
+    </div>
+    <button id="calc-tracking">Отследить</button>
+  </div>
+
+  <!-- ВАЛЮТА -->
+  <div id="currency-tab" class="tab-content">
+    <div class="form-group">
+      <label>Сумма</label>
+      <input id="c-amount" type="number" placeholder="1000" min="0.01" step="0.01">
+    </div>
+    <div class="row">
+      <div class="form-group">
+        <label>От</label>
+        <input id="c-from" type="text" placeholder="USD" value="USD" maxlength="3">
+      </div>
+      <div class="form-group">
+        <label>До</label>
+        <input id="c-to" type="text" placeholder="RUB" value="RUB" maxlength="3">
+      </div>
+    </div>
+    <button id="calc-currency">Конвертировать</button>
+  </div>
+
+  <!-- ПОСТАВЩИКИ -->
+  <div id="suppliers-tab" class="tab-content">
+    <div class="form-group">
+      <label>Поиск поставщика</label>
+      <input id="sup-query" type="text" placeholder="кофе, чипсы, консервы">
+    </div>
+    <button id="calc-suppliers">Найти</button>
+  </div>
+
+  <div id="result-area" class="result" style="display:none;"></div>
+
+  <script>
+    // Переключение табов
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+        document.getElementById(this.dataset.tab + '-tab').classList.add('active');
+        document.getElementById('result-area').style.display = 'none';
+      });
+    });
+
+    // Отправка данных в бота
+    function sendAction(action, data) {
+      if (window.Telegram && window.Telegram.WebApp) {
+        window.Telegram.WebApp.sendData(JSON.stringify(data));
+      }
+    }
+
+    // Фрахт
+    document.getElementById('calc-shipping').addEventListener('click', function() {
+      const data = {
+        action: 'calculate_shipping',
+        origin: document.getElementById('s-origin').value.trim(),
+        destination: document.getElementById('s-destination').value.trim(),
+        weight: parseFloat(document.getElementById('s-weight').value) || 0,
+        value_cny: parseFloat(document.getElementById('s-value').value) || 0
+      };
+      sendAction('calculate_shipping', data);
+    });
+
+    // Трекинг
+    document.getElementById('calc-tracking').addEventListener('click', function() {
+      const data = {
+        action: 'track_shipment',
+        tracking_number: document.getElementById('t-number').value.trim()
+      };
+      sendAction('track_shipment', data);
+    });
+
+    // Валюта
+    document.getElementById('calc-currency').addEventListener('click', function() {
+      const data = {
+        action: 'convert_currency',
+        amount: parseFloat(document.getElementById('c-amount').value) || 0,
+        from: document.getElementById('c-from').value.trim().toUpperCase(),
+        to: document.getElementById('c-to').value.trim().toUpperCase()
+      };
+      sendAction('convert_currency', data);
+    });
+
+    // Поставщики
+    document.getElementById('calc-suppliers').addEventListener('click', function() {
+      const data = {
+        action: 'search_suppliers',
+        query: document.getElementById('sup-query').value.trim()
+      };
+      sendAction('search_suppliers', data);
+    });
+  </script>
+</body>
+</html>
