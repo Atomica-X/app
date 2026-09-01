@@ -36,10 +36,10 @@ export default function Hero() {
             style={{ animationDelay: '0.2s' }}
           >
             <a href="/freight" className="hidden md:block px-5 py-2.5 text-white text-sm hover:bg-white/10 hover:-translate-y-0.5 btn-cut-border">
-              <span>Калькулятор фрахта</span>
+              <span>Фрахт</span>
             </a>
             <a href="/tracking" className="hidden md:block px-5 py-2.5 bg-white text-black text-sm hover:bg-white/90 hover:-translate-y-0.5 btn-cut">
-              Отслеживание
+              Трекинг
             </a>
           </div>
         </nav>
